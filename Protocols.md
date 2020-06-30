@@ -13,6 +13,7 @@
     * name: \<requested display name of new User\>
   * Response:
     * Set-Cookie: \<your new id\>
+    * name: \<your name\>
 
 ### Query username
   * Method: POST
@@ -21,3 +22,17 @@
         * Cookie: \<your user id which is also the cookie\>
   * Response
     * name: \<your display name\>
+
+### Change 'HIMADO'
+  * Method: POST
+  * URL: /sethimado
+    * Parameters:
+      * Himado: \<himado in integer\>
+  * Response
+
+### Query list of users
+    * Method: POST
+    * URL: /names
+      * Parameters
+    * Response
+      * Json: \<array of registered names\>

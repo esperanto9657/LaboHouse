@@ -6,6 +6,7 @@
 /// Part of the LaboHouse tool. Proprietary and confidential.
 /// See the licenses directory for details.
 
+#include <ratio>
 #if __has_include(<filesystem>)
 #include <filesystem>
 #else
@@ -17,9 +18,10 @@
 #include <labo/debug/Log.h>
 #include <labo/house/User.h>
 #include <labo/server/Base.h>
-#include <labo/server/http/Body.h>
+#include <labo/server/http/Html.h>
 #include <labo/server/http/Request.h>
 #include <labo/server/http/Response.h>
+#include <labo/server/http/ResponseHelper.h>
 #include <labo/util/fdstreambuf.h>
 #include <limits>
 // #include <llvm/Support/CommandLine.h>
@@ -48,61 +50,110 @@ struct Action
 
         Request req;
         in >> req;
-        switch (req.method) {
+
+        auto is_bad_request{ false };
+        vector<string> missing_values;
+        /// Convenience function for obtaining header values.
+        auto get_header = [&](const string value_name) -> string {
+            auto opt{ req.header_value(value_name) };
+            if (!opt) {
+                is_bad_request = true;
+                missing_values.push_back(value_name);
+                return "";
+            }
+            return opt.get();
+        };
+        /// Must be called after obtaining all required values with 'get_header'
+        auto check_request = [&]() {
+            if (is_bad_request) {
+                ostringstream oss;
+                oss << "Values missing: { ";
+                for (auto v : missing_values) {
+                    oss << v << ", ";
+                }
+                oss << "}";
+                string error{ oss.str() };
+                out << bad_request(error) << endl << endl;
+                errs << "[Action] ERROR: Bad request, " << error << endl;
+            }
+            return is_bad_request;
+        };
+
+        auto path{ req.path() };
+        switch (req.method()) {
             case Request::Method::GET:
-                if (req.path == "/") {
+                if (path == "/") {
                     /// reply with home page
-
                     out << Response{ Response::Status::OK,
-                                     { "../res/home.html" },
+                                     Html{ "../res/home.html" },
                                      { { "Set-Cookie", "foobar" } } };
-
-                    logs << "Replied with home page." << endl;
+                    logs << "[Action] Homepage access." << endl;
                     return;
                 }
                 break;
             case Request::Method::POST:
-                if (req.path == "/register") {
+                if (path == "/register") {
                     // Register new name
-                    if (!req.headers.count("name")) {
-                        out << Response{ Response::Status::BAD_REQUEST };
+                    auto name{ get_header("name") };
+
+                    // Mandatory check.
+                    if (check_request()) {
                         return;
                     }
 
-                    auto name{ req.headers.at("name") };
                     if (labohouse.get(name)) {
-                        out << Response{ Response::Status::FORBIDDEN };
+                        out << forbidden(
+                          "Name already exists. Please choose another one");
+                        errs << "[Action] ERROR: Name already exists, " << name
+                             << endl;
                         return;
                     }
-                    auto& user{ labohouse.Users::add(name) };
 
+                    auto& user{ labohouse.Users::add(name) };
                     out << Response{ Response::Status::OK,
-                                     { { "Set-Cookie", to_string(user.id) } } };
+                                     { { "Set-Cookie", to_string(user.id) },
+                                       { "name", user.display_name } } };
+
+                    logs << "[Action] New user added." << endl;
                     return;
                 }
-                if (req.path == "/name") {
-                    if (!req.headers.count("Cookie")) {
-                        out << Response{ Response::Status::BAD_REQUEST };
+                if (path == "/name") {
+                    auto cookie{ get_header("name") };
+
+                    // Mandatory check.
+                    if (check_request()) {
                         return;
                     }
-                    auto cookie{ stoul(req.headers.at("Cookie")) };
-                    if (auto opt{ labohouse.Users::get(cookie) }; !opt) {
-                        out << Response{ Response::Status::FORBIDDEN };
-                    } else {
-                        auto& user{ opt.get() };
-                        logs << "Name for user " << user.id << " is "
-                             << user.display_name << endl;
-                        out << Response{ Response::Status::OK,
-                                         { { "name", user.display_name } } };
+
+                    auto opt{ labohouse.Users::get(cookie) };
+                    if (!opt) {
+                        out << forbidden("Invalid cookie.");
+                        errs << "[Action] ERROR: Invalid cookie, " << cookie
+                             << endl;
+                        return;
                     }
+
+                    auto& user{ opt.get() };
+                    logs << "Name for user " << user.id << " is "
+                         << user.display_name << endl;
+                    out << Response{ Response::Status::OK,
+                                     { { "name", user.display_name } } };
+
+                    logs << "[Action] Name of user " << user.id << " is "
+                         << user.display_name << endl;
+                    return;
+                }
+
+                if (path == "/names") {
+                    out << Response{ Response::Status::OK,
+                                     labohouse.Users::to_json() };
                     return;
                 }
                 break;
         }
 
-        out << Response{ Response::Status::NOT_FOUND,
-                         { "../res/not_found.html" } };
-        logs << "Replied with not found." << endl;
+        out << not_found("Invalid URL.");
+        errs << "[Action] ERROR: Invalid URL." << endl;
     }
 };
 
@@ -133,9 +184,6 @@ main(int argc, char* argv[])
     // llvm::cl::HideUnrelatedOptions(labo::cl::related_categories);
     // llvm::cl::ParseCommandLineOptions(argc, argv);
 
-    signal(SIGQUIT, signal_handler);
-    signal(SIGTERM, signal_handler);
-    signal(SIGSTOP, signal_handler);
     signal(SIGINT, signal_handler);
 
     server = new labo::Server<Action>{ 12345 };

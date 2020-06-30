@@ -1,51 +1,132 @@
 <!DOCTYPE html>
 <html>
-    <title>Welcome to LaboHouse!</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-    <head>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script>
-        function hello() {
-            $.post("http://localhost:12345/")
+<title>Welcome to LaboHouse!</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
-            .done(function(){
-                window.alert("success")
-            })
-
-            .fail(function(){
-                window.alert("fail")
-            })
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>
+        function show_error(res, status) {
+            window.alert(status + ": " + res.getResponseHeader("error"))
         }
-        </script>
-    </head>
-    <body>
-        <center>
+
+        function registerName() {
+
+            $.ajax({
+                type: 'POST',
+                url: "/register",
+                headers: {
+                    'name': document.getElementById("name").value
+                },
+
+                success: function (data, status, res) {
+                    // This is how you parse a response.
+                    window.alert("Your name is " + res.getResponseHeader("name"))
+                },
+                error: function (res, error, status) {
+                    show_error(res, status)
+                }
+            });
+        }
+
+        function registerHima() {
+
+            $.ajax({
+                type: 'POST',
+                url: "/register_hima",
+                headers: {
+                    'hima': document.getElementById("hima").value
+                },
+
+                success: function () {
+                    window.alert("Success")
+                },
+                error: function () {
+                    window.alert("Error!!!!!!!!")
+                }
+            });
+        }
+
+        function getNames() {
+            $.ajax({
+                type: 'POST',
+                url: "/names",
+
+                success: function (data, status, res) {
+                    var mytable = document.getElementById("mytable");
+
+                    mytable.innerHTM = ""; // Reset content.
+
+                    var table = document.createElement('table');
+                    table.border = '1';
+
+                    var table_header = document.createElement('thead');
+                    table.appendChild(table_header);
+                    var table_body = document.createElement('tbody');
+                    table.appendChild(table_body);
+
+                    for (var i = 0; i < data.length; i++) {
+                        var tr = document.createElement('tr');
+                        var td = document.createElement('td');
+                        tr.appendChild(td);
+                        td.innerText = data[i];
+                        table_body.appendChild(tr);
+                    }
+
+                    mytable.appendChild(table);
+                },
+                error: function () {
+                    window.alert("Error!!!!!!!!")
+                }
+            });
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="container">
         <div class="row">
-            <h1 style="text-align:center;">Welcome to LaboHouse</h1>
-        </div>
-        <br>
-        <div class="row">
-            <h3 style="text-align:center;">Please enter your name.</h3>
-        </div>
-        <div class="row">
-            <div class="col-12">
-                <form action="/register" method="post">
-                    <div class="form-group">
-                        <label for="api-url">Your name:</label>
-                        <input class="form-control" type="text" id="name" name="name" value="placeholde">
-                    </div>
-            <!-- <div class="form-group">
-                                <label>hima:</label>
-                                <select class="form-control" name="name" id="name">
-                                    <option value="1">very hima</option>
-                                    <option value="2">hima</option>
-                                    <option value="3">not hima</option>
-                                </select>
-                            </div> -->
-                    <button type="button" onclick="hello()" class="btn btn-primary rounded-pill">Send</button>
-                </form>
+            <div class="mx-auto">
+                <h1 style="text-align:center;">Welcome to LaboHouse</h1>
             </div>
         </div>
-        </center>
-    </body>
+    </div>
+    <br>
+    <div class="row">
+        <div class="mx-auto">
+            <h3 style="text-align:center;">Please enter your name.</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6 mx-auto">
+            <form action="/register" method="post">
+                <div class="form-group">
+                    <label for="api-url">Your name:</label>
+                    <input class="form-control" type="text" id="name" name="name" value="">
+                    <br>
+                    <center>
+                        <button type="button" onclick="registerName()"
+                            class="btn btn-primary rounded-pill">Send</button>
+                    </center>
+                </div>
+                <center>
+                    <button type="button" onclick="getNames()" class="btn btn-primary rounded-pill">See names!</button>
+                    <div id="mytable"></div>
+                </center>
+                <!-- <div class="form-group">
+                                        <label>hima:</label>
+                                        <select class="form-control" name="name" id="name">
+                                            <option value="1">very hima</option>
+                                            <option value="2">hima</option>
+                                            <option value="3">not hima</option>
+                                        </select>
+                                    </div> -->
+            </form>
+        </div>
+    </div>
+    </div>
+</body>
+
 </html>
