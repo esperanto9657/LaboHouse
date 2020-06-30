@@ -6,6 +6,7 @@
 /// Part of the LaboHouse tool. Proprietary and confidential.
 /// See the licenses directory for details.
 #include <labo/house/User.h>
+#include <labo/debug/Log.h>
 
 namespace labo {
 User::User(const ulong id, const string display_name)
@@ -24,5 +25,20 @@ void
 User::set_status(Status status)
 {
     status_flag = status;
+}
+
+string
+User::to_string(Status s)
+{
+    switch (s) {
+        case Status::free:
+            return "free";
+        case Status::easy:
+            return "easy";
+        case Status::busy:
+            return "busy";
+        default:
+            failure();
+    }
 }
 }

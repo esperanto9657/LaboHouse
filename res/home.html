@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html>
 <title>Welcome to LaboHouse!</title>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
     integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <script>
+
         function show_error(res, status) {
             window.alert(status + ": " + res.getResponseHeader("error"))
         }
 
         function registerName() {
-
             $.ajax({
                 type: 'POST',
                 url: "/register",
@@ -20,9 +22,11 @@
                     'name': document.getElementById("name").value
                 },
 
-                success: function (data, status, res) {
-                    // This is how you parse a response.
-                    window.alert("Your name is " + res.getResponseHeader("name"))
+                success: function (data, status, req) {
+                    // wip ひま度alert
+                    window.location.href = "#hima"
+                    var name = req.getResponseHeader("name");
+                    console.log(name);
                 },
                 error: function (res, error, status) {
                     show_error(res, status)
@@ -34,59 +38,44 @@
 
             $.ajax({
                 type: 'POST',
-                url: "/register_hima",
+                url: "/sethimado",
                 headers: {
-                    'hima': document.getElementById("hima").value
+                    'Himado': document.getElementById("himado").value
                 },
 
-                success: function () {
-                    window.alert("Success")
+                success: function (data, status, req) {
+                    window.location.href = "#list"
+                    getHima();
                 },
-                error: function () {
-                    window.alert("Error!!!!!!!!")
+                error: function (res, error, status) {
+                    show_error(res, status)
                 }
             });
         }
 
-        function getNames() {
+        function getHima() {
             $.ajax({
                 type: 'POST',
-                url: "/names",
-
-                success: function (data, status, res) {
-                    var mytable = document.getElementById("mytable");
-
-                    mytable.innerHTM = ""; // Reset content.
-
-                    var table = document.createElement('table');
-                    table.border = '1';
-
-                    var table_header = document.createElement('thead');
-                    table.appendChild(table_header);
-                    var table_body = document.createElement('tbody');
-                    table.appendChild(table_body);
-
-                    for (var i = 0; i < data.length; i++) {
-                        var tr = document.createElement('tr');
-                        var td = document.createElement('td');
-                        tr.appendChild(td);
-                        td.innerText = data[i];
-                        table_body.appendChild(tr);
-                    }
-
-                    mytable.appendChild(table);
+                url: '/gethimado',
+                success: function (data, status, req) {
+                    var himado = req.getResponseHeader("Himado");
+                    window.alert(himado);
                 },
-                error: function () {
-                    window.alert("Error!!!!!!!!")
+                error: function (res, error, status) {
+                    show_error(res, status)
                 }
             });
+        }
+
+        function checkHima() {
+
         }
 
     </script>
 </head>
 
 <body>
-    <div class="container">
+    <div class="container" data-role="page" id="home">
         <div class="row">
             <div class="mx-auto">
                 <h1 style="text-align:center;">Welcome to LaboHouse</h1>
@@ -101,21 +90,87 @@
     </div>
     <div class="row">
         <div class="col-6 mx-auto">
-            <form action="/register" method="post">
+
+            <!-- 名前の登録 -->
+            <form>
                 <div class="form-group">
                     <label for="api-url">Your name:</label>
-                    <input class="form-control" type="text" id="name" name="name" value="">
+                    <input class="form-control" type="text" id="name" value="">
                     <br>
                     <center>
                         <button type="button" onclick="registerName()"
                             class="btn btn-primary rounded-pill">Send</button>
                     </center>
                 </div>
-                <center>
-                    <button type="button" onclick="getNames()" class="btn btn-primary rounded-pill">See names!</button>
-                    <div id="mytable"></div>
-                </center>
-                <!-- <div class="form-group">
+            </form>
+
+
+        </div>
+    </div>
+    </div>
+
+    <div class="container" data-role="page" id="hima">
+        <div class="row">
+            <div class="mx-auto">
+                <h1 style="text-align:center;">Welcome to LaboHouse</h1>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="mx-auto">
+                <h3 style="text-align:center;">Please set your Himado</h3>
+            </div>
+            <div class="row">
+                <div class="col-6 mx-auto">
+
+                    <!-- ひま度の登録 -->
+                    <form>
+                        <div class="form-group">
+                            <center>
+                                <select class="form-control" id="himado">
+                                    <option value="1">very hima</option>
+                                    <option value="2">hima</option>
+                                    <option value="3">not hima</option>
+                                </select>
+                                <button type="button" onclick="registerHima()"
+                                    class="btn btn-primary rounded-pill">Register</button>
+                            </center>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" data-role="page" id="list">
+            <div class="row">
+                <div class="mx-auto">
+                    <h1 style="text-align:center;">Welcome to LaboHouse</h1>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="mx-auto">
+                    <h3 style="text-align:center;"></h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6 mx-auto">
+
+                    <form>
+                        <div class="form-group">
+                            <center>
+                                <button type="button" onclick="checkHima()"
+                                    class="btn btn-primary rounded-pill">Check</button>
+                            </center>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <center>
+                <button type="button" onclick="getNames()" class="btn btn-primary rounded-pill">See names!</button>
+                <div id="mytable"></div>
+            </center>
+            <!-- <div class="form-group">
                                         <label>hima:</label>
                                         <select class="form-control" name="name" id="name">
                                             <option value="1">very hima</option>
@@ -125,8 +180,13 @@
                                     </div> -->
             </form>
         </div>
-    </div>
-    </div>
+
+
+
+
+
+
+
 </body>
 
 </html>
