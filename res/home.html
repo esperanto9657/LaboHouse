@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html>
-<title>Welcome to LaboHouse!</title>
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+<title>LaboHouse (alpha)</title>
 
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-    <script>
-
+    <script type="text/javascript">
+        /// Standard function used to display HTTP request errors.
         function show_error(res, status) {
-            window.alert(status + ": " + res.getResponseHeader("error"))
+            window.alert(status + ": " + res.getResponseHeader("error"));
         }
+
+        function noop() { };
 
         function registerName() {
             $.ajax({
@@ -23,10 +21,11 @@
                 },
 
                 success: function (data, status, req) {
-                    // wip ひま度alert
-                    window.location.href = "#hima"
-                    var name = req.getResponseHeader("name");
-                    console.log(name);
+                    refresh_main();
+
+                    // Hide the registration page and show the main page.
+                    document.getElementById("page::register").style.display = "none";
+                    document.getElementById("page::main").style.display = "block";
                 },
                 error: function (res, error, status) {
                     show_error(res, status)
@@ -34,18 +33,41 @@
             });
         }
 
-        function registerHima() {
+        function queryUser(callback = noop) {
+            $.ajax({
+                type: 'POST',
+                url: "/name",
 
+                success: function (data, status, req) {
+                    var name = req.getResponseHeader("name");
+                    // Changing the name display.
+                    document.getElementById("block::name").innerText = "";
+                    document.getElementById("block::name").innerText = name;
+
+                    callback();
+
+                    // Hide the registration page and show the main page.
+                    document.getElementById("page::register").style.display = "none";
+                    document.getElementById("page::main").style.display = "block";
+                },
+                error: function (res, error, status) {
+                    // Do nothing 
+                }
+            });
+        }
+
+        function registerHima(value = document.getElementById("himado").value) {
+            document.getElementById("himado").value = value;
             $.ajax({
                 type: 'POST',
                 url: "/sethimado",
                 headers: {
-                    'Himado': document.getElementById("himado").value
+                    'Himado': value
                 },
 
                 success: function (data, status, req) {
-                    window.location.href = "#list"
                     getHima();
+                    refresh_main();
                 },
                 error: function (res, error, status) {
                     show_error(res, status)
@@ -59,7 +81,6 @@
                 url: '/gethimado',
                 success: function (data, status, req) {
                     var himado = req.getResponseHeader("Himado");
-                    window.alert(himado);
                 },
                 error: function (res, error, status) {
                     show_error(res, status)
@@ -67,126 +88,231 @@
             });
         }
 
-        function checkHima() {
+        function getNames() {
+            $.ajax({
+                type: 'POST',
+                url: '/names_sorted',
+                success: function (data, status, req) {
+                    var members = document.getElementById("list::members");
+                    members.innerText = ""; // Clear content
 
+                    function create_list(himado) {
+                        var header = document.createElement("h3");
+                        header.innerText = himado;
+                        var list = document.createElement("ul");
+                        header.appendChild(list);
+                        for (var i in data[himado]) {
+                            var m = data[himado][i];
+                            var ml = document.createElement("li");
+                            ml.innerText = m;
+                            list.appendChild(ml);
+                        }
+                        return header;
+                    };
+
+                    members.appendChild(create_list("free"));
+                    members.appendChild(create_list("easy"));
+                    members.appendChild(create_list("busy"));
+                },
+                error: function (res, error, status) {
+                    show_error(res, status)
+                }
+            });
         }
 
+        function sendChat() {
+            $.ajax({
+                type: 'POST',
+                url: '/chat_main',
+                headers: { 'message': document.getElementById("chatbox").value },
+                success: function (data, status, req) {
+                    document.getElementById("chatbox").value = "";
+                    getChat();
+                },
+                error: function (r, e, s) {
+                    show_error(r, s);
+                }
+            });
+        }
+
+        function chatOnEnter(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                sendChat();
+            }
+        };
+
+        function getChat() {
+            $.ajax({
+                type: 'POST',
+                url: '/chat_main_get',
+                success: function (data, status, req) {
+                    var chat = document.getElementById("block::chat_main");
+                    chat.innerText = ""; // Reset chat
+
+                    var text = "";
+                    for (var i in data) {
+                        var m = data[i];
+                        text += m.time;
+                        text += m.user + ": ";
+                        text += m.msg + "\n";
+                    }
+                    chat.innerText = text;
+                },
+                error: function (r, e, s) {
+                    show_error(r, s);
+                }
+            });
+        };
+
+
+        // Refreshes the entire main page.
+        function refresh_main() {
+            getNames();
+            queryUser();
+            getChat();
+            timer_on = true;
+        };
+
+        var timer;
+        var timer_on = false;
+        // Run on page load.
+        function init() {
+            queryUser(refresh_main)
+            addEventListener("mousemove", resetTimer, false);
+            addEventListener("mousedown", resetTimer, false);
+            addEventListener("keypress", resetTimer, false);
+            addEventListener("DOMMouseScroll", resetTimer, false);
+            addEventListener("mousewheel", resetTimer, false);
+            addEventListener("touchmove", resetTimer, false);
+            addEventListener("MSPointerMove", resetTimer, false);
+
+            document.getElementById("chatbox").addEventListener("keypress", chatOnEnter);
+
+            resetTimer();
+        };
+
+        function goInactive() {
+            registerHima(2);
+        };
+
+        function resetTimer() {
+            if (!timer_on) {
+                return;
+            }
+            window.clearTimeout(timer);
+            timer = window.setTimeout(goInactive, 2000); // Timeout is in ms
+        }
+
+        window.onload = init;
     </script>
+    <style>
+        * {
+            margin: 0;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        html,
+        body {
+            position: fixed;
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+        }
+
+        .header {
+            box-sizing: border-box;
+            background-color: lightseagreen;
+            border-style: groove;
+            border-width: thick;
+            height: 8%;
+        }
+
+        .page {
+            box-sizing: border-box;
+            background-color: lightgreen;
+            border-style: solid;
+            border-width: medium;
+            height: 92%;
+        }
+
+        .panel {
+            box-sizing: border-box;
+            border-style: dotted;
+            border-width: thin;
+            float: left;
+            overflow-y: scroll;
+            height: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container" data-role="page" id="home">
-        <div class="row">
-            <div class="mx-auto">
-                <h1 style="text-align:center;">Welcome to LaboHouse</h1>
-            </div>
-        </div>
+    <!-- Page Header -->
+    <div id="header" class="header">
+        <h1 style="text-align:center;">LaboHouse (alpha)</h1>
     </div>
-    <br>
-    <div class="row">
-        <div class="mx-auto">
-            <h3 style="text-align:center;">Please enter your name.</h3>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-6 mx-auto">
 
-            <!-- 名前の登録 -->
+    <div id="page::register" class="page">
+        <!-- Register Name -->
+        <center>
             <form>
-                <div class="form-group">
-                    <label for="api-url">Your name:</label>
-                    <input class="form-control" type="text" id="name" value="">
-                    <br>
-                    <center>
-                        <button type="button" onclick="registerName()"
-                            class="btn btn-primary rounded-pill">Send</button>
-                    </center>
-                </div>
+                <label for="api-url">Your name:</label>
+                <input class="form-control" type="text" id="name" value="">
+                <button type="button" onclick="registerName()" class="btn btn-primary rounded-pill">Send</button>
             </form>
-
-
-        </div>
-    </div>
+        </center>
     </div>
 
-    <div class="container" data-role="page" id="hima">
-        <div class="row">
-            <div class="mx-auto">
-                <h1 style="text-align:center;">Welcome to LaboHouse</h1>
+    <div id="page::main" class="page" style="display: none;">
+        <div id="panel::control" class="panel" style="width: 15%;">
+            <h2 id="block::name"></h2>
+            <div id="block::himado">
+                <!-- Change 'HIMADO' -->
+                <label><b>Himado: </b></label>
+                <select id="himado" onchange="registerHima()">
+                    <option value="0">free</option>
+                    <option value="1">easy</option>
+                    <option value="2">busy</option>
+                </select>
             </div>
         </div>
-        <br>
-        <div class="row">
-            <div class="mx-auto">
-                <h3 style="text-align:center;">Please set your Himado</h3>
-            </div>
-            <div class="row">
-                <div class="col-6 mx-auto">
 
-                    <!-- ひま度の登録 -->
-                    <form>
-                        <div class="form-group">
-                            <center>
-                                <select class="form-control" id="himado">
-                                    <option value="1">very hima</option>
-                                    <option value="2">hima</option>
-                                    <option value="3">not hima</option>
-                                </select>
-                                <button type="button" onclick="registerHima()"
-                                    class="btn btn-primary rounded-pill">Register</button>
-                            </center>
-                        </div>
+        <div id="panel::main" class="panel" style="width: 70%;">
+            <h2 style="text-align: center;"><b>Chat</b></h2>
+            <div style="display: flex; flex-wrap: wrap; height: 92%;">
+                <div id="block::chat_main" class="chat" style="width: 100%; align-self: flex-start;"></div>
+                <div style="align-self: flex-end;">
+                    <form action="noop" id="form_chat">
+                        <textarea id="chatbox" cols="999" rows="1" name="chat"
+                            form="form_chat">Say something...</textarea>
+                        <button type="button" onclick="sendChat()">Chat</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="container" data-role="page" id="list">
-            <div class="row">
-                <div class="mx-auto">
-                    <h1 style="text-align:center;">Welcome to LaboHouse</h1>
-                </div>
-            </div>
-            <br>
-            <div class="row">
-                <div class="mx-auto">
-                    <h3 style="text-align:center;"></h3>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-6 mx-auto">
-
-                    <form>
-                        <div class="form-group">
-                            <center>
-                                <button type="button" onclick="checkHima()"
-                                    class="btn btn-primary rounded-pill">Check</button>
-                            </center>
-                        </div>
-                    </form>
-                </div>
-            </div>
+        <div id="panel::members" class="panel" style="width: 15%;">
             <center>
-                <button type="button" onclick="getNames()" class="btn btn-primary rounded-pill">See names!</button>
-                <div id="mytable"></div>
+                <h3>Members</h3>
+                <button type="button" onclick="getNames()" class="btn btn-primary rounded-pill">Refresh</button>
+                <left>
+                    <div id="list::members" style="text-align: left;">
+                    </div>
+                </left>
             </center>
-            <!-- <div class="form-group">
-                                        <label>hima:</label>
-                                        <select class="form-control" name="name" id="name">
-                                            <option value="1">very hima</option>
-                                            <option value="2">hima</option>
-                                            <option value="3">not hima</option>
-                                        </select>
-                                    </div> -->
-            </form>
         </div>
-
-
-
-
-
-
-
 </body>
 
 </html>

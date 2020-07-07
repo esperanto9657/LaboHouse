@@ -38,10 +38,13 @@
 
 labo::LaboHouse labohouse{};
 
+std::mutex mtx;
+
 struct Action
 {
     Action(int socket_fd)
     {
+        std::lock_guard<std::mutex> lg{ mtx };
         using namespace labo;
         using namespace http;
         socket::fdstreambuf stream{ socket_fd };
@@ -84,9 +87,10 @@ struct Action
             case Request::Method::GET:
                 if (path == "/") {
                     /// reply with home page
-                    out << Response{ Response::Status::OK,
-                                     Html{ "../res/home.html" },
-                                     { { "Set-Cookie", "foobar" } } };
+                    out << Response{
+                        Response::Status::OK,
+                        Html{ "../res/home.html" },
+                    };
                     logs << "[Action] Homepage access." << endl;
                     return;
                 }
@@ -114,18 +118,20 @@ struct Action
                                      { { "Set-Cookie", to_string(user.id) },
                                        { "name", user.display_name } } };
 
+                    labohouse.chat(user, " has joined the chat!");
+
                     logs << "[Action] New user added." << endl;
                     return;
                 }
                 if (path == "/name") {
-                    auto cookie{ get_header("name") };
+                    auto cookie{ get_header("Cookie") };
 
                     // Mandatory check.
                     if (check_request()) {
                         return;
                     }
 
-                    auto opt{ labohouse.Users::get(cookie) };
+                    auto opt{ labohouse.Users::get_from_id(cookie) };
                     if (!opt) {
                         out << forbidden("Invalid cookie.");
                         errs << "[Action] ERROR: Invalid cookie, " << cookie
@@ -153,7 +159,7 @@ struct Action
                         return;
                     }
 
-                    auto opt{ labohouse.Users::get(stoul(cookie)) };
+                    auto opt{ labohouse.Users::get_from_id(cookie) };
                     if (!opt) {
                         out << forbidden("User does not exist: id = " + cookie);
                         return;
@@ -177,7 +183,7 @@ struct Action
                         return;
                     }
 
-                    auto opt{ labohouse.Users::get(stoul(cookie)) };
+                    auto opt{ labohouse.Users::get_from_id(cookie) };
                     if (!opt) {
                         out << forbidden("User does not exist: id = " + cookie);
                         return;
@@ -202,6 +208,48 @@ struct Action
                 if (path == "/names_sorted") {
                     out << Response{ Response::Status::OK,
                                      labohouse.Users::to_json_sorted() };
+                    return;
+                }
+
+                if (path == "/echo") {
+                    auto text{ get_header("text") };
+
+                    // Mandatory check.
+                    if (check_request()) {
+                        return;
+                    }
+
+                    logs << "[Echo] " << text << endl;
+                    return;
+                }
+
+                if (path == "/chat_main") {
+                    auto cookie{ get_header("Cookie") };
+                    auto str{ get_header("message") };
+
+                    // Mandatory check.
+                    if (check_request()) {
+                        return;
+                    }
+
+                    auto opt{ labohouse.Users::get_from_id(cookie) };
+                    if (!opt) {
+                        out << forbidden("User does not exist: id = " + cookie);
+                        return;
+                    }
+                    auto& user{ opt.get() };
+                    auto msg{ labohouse.chat(user, str) };
+
+                    logs << msg << endl;
+
+                    out << Response{ Response::Status::OK };
+
+                    return;
+                }
+
+                if (path == "/chat_main_get") {
+                    out << Response{ Response::Status::OK,
+                                     labohouse.get_main_chat().to_json() };
                     return;
                 }
 

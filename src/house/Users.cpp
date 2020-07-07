@@ -7,6 +7,7 @@
 /// See the licenses directory for details.
 
 #include <algorithm>
+#include <cctype>
 #include <labo/debug/Log.h>
 #include <labo/house/User.h>
 #include <labo/house/Users.h>
@@ -47,6 +48,25 @@ Users::get(string display_name) const
     }
 }
 
+bool
+is_number(string s)
+{
+    return !s.empty() && find_if(s.begin(), s.end(), [](auto c) {
+                             return !isdigit(c);
+                         }) == s.end();
+}
+
+OptionalRef<User>
+Users::get_from_id(string id) const
+{
+    if (!is_number(id)) {
+        errs << "ID is not a number: " << id << endl;
+        return OptionalRef<User>{};
+    }
+
+    return get(stoul(id));
+}
+
 OptionalRef<User>
 Users::get(ulong id) const
 {
@@ -60,29 +80,30 @@ Users::get(ulong id) const
 nlohmann::json
 Users::to_json() const
 {
-    vector<string> names;
-    names.reserve(users.size());
+    nlohmann::json j{ nlohmann::json::array() };
     for_each(usernames.begin(), usernames.end(), [&](auto& p) {
-        names.push_back(p.first);
+        j.push_back(p.first);
     });
-    return names;
+    return j;
 }
 
 nlohmann::json
 Users::to_json_sorted() const
 {
-    vector<vector<string>> sorted_names;
-    auto himado_count{ static_cast<uint>(User::Status::last) };
-    sorted_names.resize(himado_count);
-    for_each(users.begin(), users.end(), [&](auto u) {
-        sorted_names.at(static_cast<uint>(u->status()))
-          .push_back(u->display_name);
-    });
-
     nlohmann::json j;
-    for (auto i{ 0U }; i < himado_count; i++) {
-        j[User::to_string(static_cast<User::Status>(i))] = sorted_names.at(i);
+    unordered_map<User::Status, nlohmann::json> sorted;
+    for (auto s{ User::Status::free };
+         static_cast<char>(s) < static_cast<char>(User::Status::last);
+         s = static_cast<User::Status>(static_cast<char>(s) + 1)) {
+        sorted[s] = nlohmann::json::array();
     }
+    for_each(users.begin(), users.end(), [&](auto u) {
+        sorted[u->status()].push_back(u->display_name);
+    });
+    for (auto [s, sj] : sorted) {
+        j[User::to_string(s)] = sj;
+    };
+
     return j;
 }
 
