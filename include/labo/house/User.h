@@ -7,6 +7,7 @@
 /// See the licenses directory for details.
 #pragma once
 #include <mutex>
+#include <nlohmann/json.hpp>
 
 namespace labo {
 using namespace std;
@@ -29,27 +30,38 @@ class User
     /// @return string
     static string to_string(Status s);
 
+    /// Student id
+    const string id;
     /// Identifier for the user. Also used as the cookie. (FIXME: Vulnerable)
-    const ulong id;
-    /// Display name
-    const string display_name;
+    const string cookie;
 
-  private:
+    /// Display name
+    string name;
     /// level for freeness (is that a word?)
-    Status status_flag;
+    Status status;
 
   public:
     /// A user must have an id and a name.
     /// @param id
-    /// @param display_name
-    User(const ulong id, const string display_name);
+    /// @param cookie
+    User(const string id, const string cookie);
 
-    /// @return Status The current status of the user.
-    Status status() const;
+    struct hash
+    {
+        /// Get hash.
+        /// @param u
+        /// @return size_t
+        size_t operator()(const User& u) const;
+    };
 
-    /// Change status of user.
-    /// @param status
-    void set_status(Status status);
+    /// @param rhs
+    /// @return true If this is the same instance as rhs.
+    /// @return false
+    bool operator==(const User& rhs) const;
+
+    /// Obtain this as json.
+    /// @return nlohmann::json
+    nlohmann::json to_json() const;
 
   private:
     /// Disallow copy because users are supposed to be unique.

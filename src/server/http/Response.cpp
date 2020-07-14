@@ -8,7 +8,7 @@
 #include <labo/debug/Log.h>
 #include <labo/server/http/Html.h>
 #include <labo/server/http/Response.h>
-#include <labo/util/json.hpp>
+#include <nlohmann/json.hpp>
 #include <limits>
 #include <regex>
 
@@ -39,7 +39,7 @@ Response::Response(Status status, Headers headers)
 void
 Response::print(ostream& os) const
 {
-    static const string http_protocol_ver{ "HTTP/1.1" };
+    static const string http_protocol_ver{ "HTTP/1.0" };
     os << http_protocol_ver << " " << static_cast<uint>(status) << " "
        << to_string(status) << endl;
     for (auto& [data, value] : headers) {

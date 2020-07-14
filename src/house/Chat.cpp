@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <labo/house/Chat.h>
 #include <labo/house/User.h>
-#include <labo/util/json.hpp>
+#include <nlohmann/json.hpp>
 #include <labo/util/stream.h>
 #include <ostream>
 #include <sstream>
@@ -21,7 +21,7 @@ Chat::Msg::print(ostream& os) const
 {
     auto time_t{ system_clock::to_time_t(time) };
     os << "[" << put_time(localtime(&time_t), "%Y-%m-%d_%X") << "] ";
-    os << user->display_name << " ";
+    os << user->name << " ";
     os << content;
 };
 
@@ -33,7 +33,7 @@ Chat::Msg::to_json() const
     auto time_t{ system_clock::to_time_t(time) };
     oss << "[" << put_time(localtime(&time_t), "%Y-%m-%d_%X") << "] ";
     j["time"] = oss.str();
-    j["user"] = user->display_name;
+    j["user"] = user->to_json();
     j["msg"] = content;
     return j;
 }

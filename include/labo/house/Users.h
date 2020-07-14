@@ -7,60 +7,52 @@
 /// See the licenses directory for details.
 #pragma once
 
+#include <labo/house/User.h>
 #include <labo/util/OptionalRef.h>
-#include <labo/util/json.hpp>
+#include <nlohmann/json.hpp>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 #include <unordered_set>
 
 namespace labo {
 using namespace std;
 using ulong = unsigned long;
-class User;
 
 /// Dictionary of users.
 class Users
 {
     /// Mutex used to avoid data corruption.
-    mutex mtx;
+    shared_mutex mtx;
     /// All users. Owned by this.
-    unordered_set<User*> users;
-    /// Used for name lookups.
-    unordered_map<string, User*> usernames;
+    unordered_set<User, User::hash> users;
     /// Used for id lookups.
-    unordered_map<ulong, User*> ids;
+    unordered_map<string, User*> ids;
+    /// Used for cookie lookups.
+    unordered_map<string, User*> cookies;
 
   public:
-    /// We own users.
-    ~Users();
+    Users() = default;
 
-    /// Adds a new user
-    /// Note that it will return the existing user if there is one.
-    /// @param display_name
-    /// @return OptionalRef<User> The new user.
-    User& add(string display_name);
+    /// Adds a new user. Attempting to add a user with the same ID is a fatal
+    /// error. Note that it will return the existing user if there is one.
+    /// @param id
+    /// @return The new user.
+    User& add(string id);
 
-    /// Fatal error if missing.
-    /// @param display_name
-    /// @return OptionalRef<User>
-    OptionalRef<User> get(string display_name) const;
-    /// Fatal error if missing.
     /// @param id
     /// @return OptionalRef<User>
-    OptionalRef<User> get_from_id(string id) const;
+    OptionalRef<User> by_id(string id);
+    /// @param cookie
+    /// @return OptionalRef<User>
+    OptionalRef<User> by_cookie(string cookie);
 
     /// Convert Users into a json array.
     /// @return nlohmann::json
-    nlohmann::json to_json() const;
-
-    /// Convert Users into an json array (Separated with HIMADO)
-    /// @return nlohmann::json
-    nlohmann::json to_json_sorted() const;
+    nlohmann::json to_json();
 
   private:
-    /// Fatal error if missing.
-    /// @param id
-    /// @return OptionalRef<User>
-    OptionalRef<User> get(ulong id) const;
+    /// Must be unique.
+    Users(const Users&) = delete;
 };
 };

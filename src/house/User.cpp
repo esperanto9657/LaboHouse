@@ -5,27 +5,16 @@
 ///
 /// Part of the LaboHouse tool. Proprietary and confidential.
 /// See the licenses directory for details.
+#include <nlohmann/json.hpp>
 #include <labo/debug/Log.h>
 #include <labo/house/User.h>
 
 namespace labo {
-User::User(const ulong id, const string display_name)
+User::User(const string id, const string cookie)
   : id{ id }
-  , display_name{ display_name }
-  , status_flag{ Status::free }
+  , cookie{ cookie }
+  , status{ Status::free }
 {}
-
-User::Status
-User::status() const
-{
-    return status_flag;
-};
-
-void
-User::set_status(Status status)
-{
-    status_flag = status;
-}
 
 string
 User::to_string(Status s)
@@ -43,5 +32,24 @@ User::to_string(Status s)
             errs << "Invalid 'HIMADO': " << static_cast<uint>(s) << endl;
             failure();
     }
+}
+
+size_t
+User::hash::operator()(const User& u) const
+{
+    return std::hash<string>()(u.cookie);
+}
+
+bool
+User::operator==(const User& rhs) const
+{
+    return this == &rhs;
+}
+
+nlohmann::json User::to_json()const{
+    nlohmann::json j;
+    j["name"] = name;
+    j["id"] = id;
+    return j;
 }
 }
