@@ -15,9 +15,8 @@
 #include <sstream>
 
 namespace labo::http {
-ofstream logs{ "requests.log" };
+ofstream logs{ "http1_requests.log" };
 mutex mtx;
-
 
 istream&
 get_line(istream& is, string& str)
@@ -49,7 +48,7 @@ get_line(istream& is, string& str)
 void
 Request::deserialize(istream& is)
 {
-    lock_guard lg{mtx};
+    lock_guard lg{ mtx };
     auto is_valid = [&]() {
         if (is.bad() || is.eof()) {
             errs << "[Request] error." << endl;
@@ -164,7 +163,7 @@ Request::query_value(const string value_name) const
 {
     auto itr{ query.find(value_name) };
     if (itr == query.end()) {
-        errs << "No query value: " << value_name << endl;
+        errs << "[Request] No query value: " << value_name << endl;
         return OptionalRef<const string>{};
     }
 
@@ -176,7 +175,7 @@ Request::header_value(const string value_name) const
 {
     auto itr{ headers.find(value_name) };
     if (itr == headers.end()) {
-        errs << "No header value: " << value_name << endl;
+        errs << "[Request] No header value: " << value_name << endl;
         return OptionalRef<const string>{};
     }
 

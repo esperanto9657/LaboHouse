@@ -11,46 +11,36 @@
 #include <thread>
 #include <unordered_set>
 
-namespace labo::server {
+namespace labo {
+class LaboHouse;
+namespace server {
 using namespace std;
 
-/// Abstraction of a http server.
-class Server
+/// Abstraction of a http server that returns a html page.
+class Html
 {
-
-  public:
-    /// Port number of the server.
-    int port;
-
-    function<void(int)> action;
-
   private:
     /// the listening socket
-    int socket_listen;
+    int sfd;
 
-    /// Mutex for thread manipulation.
-    mutex t_mtx;
-    /// Set of created threads.
-    unordered_map<thread::id, pair<thread*, bool>> threads;
+    /// Reference to LaboHouse
+    LaboHouse& lh;
 
   public:
-    /// @param port Port number of the server.
-    Server(int port, decltype(action) action);
+    /// Default constructor.
+    Html(LaboHouse &lh);
 
     /// Start the server.
     /// WARNING: This function will not return until the server is killed. Call
     /// kill() to return from it.
-    void start();
-
-    /// Server's constructor will return as soon as possible after callling
-    /// this.
-    void kill();
+    void start(const int port);
 
     /// Try to join all created threads before returning.
-    ~Server();
+    ~Html();
 
   private:
     /// Disallow copy because we own resources.
-    Server(const Server&) = delete;
+    Html(const Html&) = delete;
+};
 };
 };
