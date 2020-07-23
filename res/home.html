@@ -1,69 +1,226 @@
 <!DOCTYPE html>
 <html>
-<title>LaboHouse (alpha)</title>
+<title>LaboHouse</title>
 
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- CSS only -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <!-- JS, Popper.js, and jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+    <!-- date time -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- code -->
     ${API_JS}
     ${JS}
     ${CSS}
 </head>
 
 <body>
-    <!-- Page Header -->
-    <div id="header" class="header">
-        <h1 style="text-align:center;">LaboHouse (alpha)</h1>
-    </div>
+    <div class="d-flex w-100 h-100 flex-column bg-light">
+        <!-- Page Header -->
+        <div id="LH::header" class="shadow bg-primary d-flex">
+            <div class="text-center display-1 font-weight-bolder text-light flex-fill">
+                LaboHouse
+            </div>
+            <div class="text-right text-white text-right p-3 text-bottom" id="GERO"></div>
+        </div>
 
-    <div id="page::register" class="page">
-        <!-- Register Name -->
-        <center>
-            <form>
-                <label for="api-url">ID: </label>
-                <input class="form-control" type="text" id="id" value="">
-                <label for="api-url">Display name: </label>
-                <input class="form-control" type="text" id="name" value="">
-                <button type="button" onclick="btnRegisterUser()" class="btn btn-primary rounded-pill">Send</button>
-            </form>
-        </center>
-    </div>
+        <!-- Toasts -->
+        <div class="position-absolute w-100 d-flex flex-column p-4" id="toast"></div>
 
-    <div id="page::main" class="page" style="display: none;">
-        <div id="panel::control" class="panel" style="width: 15%;">
-            <h2 id="block::name"></h2>
-            <div id="block::himado">
+        <!-- Loing Page -->
+        <div id="P#register" class="d-flex flex-grow-1 text-center">
+            <!-- Register Name -->
+            <div class="d-flex flex-column align-self-center w-100">
+                <div class="jumbotron align-self-center">
+                    <div class="text-center display-4 p-4">Welcome!</div>
+                    <div class="py-2">
+                        <input class="form-control" type="text" id="id" placeholder="ID (Unique)">
+                    </div>
+                    <div class="py-2">
+                        <input class="form-control" type="text" id="name" placeholder="Display Name">
+                    </div>
+                    <div class="py-2">
+                        <button type="button" id="btn_join" onclick="btnRegisterUser()"
+                            class="btn btn-primary rounded-pill">Join
+                            now!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- index page -->
+        <div id="P#main" class="flex-grow-1 d-flex justify-content-between">
+            <!-- ひま度変更 -->
+            <div class="border-right align-self-start h-100">
+                <h3 class="border-bottom display-4 p-4" id="block::name"></h3>
+
                 <!-- Change 'HIMADO' -->
-                <label><b>Himado: </b></label>
-                <select id="himado" onchange="btnSetHimado()">
-                    <option value="0" selected="true">free</option>
-                    <option value="1">easy</option>
-                    <option value="2">busy</option>
-                    <option value="3">offline</option>
-                </select>
-            </div>
-        </div>
+                <div class="border-bottom d-flex p-3">
+                    <div class="align-middle flex-fill text-center px-1">Himado: </div>
+                    <select id="himado" onchange="btnSetHimado()" class="form-control flex-fill">
+                        <option value="0">free</option>
+                        <option value="1">easy</option>
+                        <option value="2">busy</option>
+                        <option value="3">offline</option>
+                    </select>
+                </div>
 
-        <div id="panel::main" class="panel" style="width: 70%;">
-            <h2 style="text-align: center;"><b>Chat</b></h2>
-            <div style="display: flex; flex-wrap: wrap; height: 92%;">
-                <div id="block::chat_main" class="chat" style="width: 100%; align-self: flex-start;"></div>
-                <div style="align-self: flex-end;">
-                    <textarea id="chatbox" cols="999" rows="1">Say something...</textarea>
-                    <button type="button" onclick="btnSendChat()">Chat</button>
+                <!-- watch list -->
+                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse"
+                    data-target="#watchlist">
+                    Watchlist <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
+                </button>
+                <div id="watchlist" class="collapse">
+                    <div class="input-group p-3">
+                        <select class="form-control" id="watchID">
+                        </select>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-success" onclick="btnAddWatchList()">Add</button>
+                            <button type="button" class="btn btn-danger" onclick="btnRemoveWatchList()">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse"
+                    data-target="#timerange">
+                    Timerange <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
+                </button>
+                <div id="timerange" class="collapse">
+                    <div class="input-group date px-3 pt-3" id="tp_timerange_start" data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input" data-target="#tp_timerange_start"
+                            placeholder="Start" />
+                        <div class="input-group-append" data-target="#tp_timerange_start" data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+                        </div>
+                    </div>
+                    <div class="input-group date px-3" id="tp_timerange_end" data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input" data-target="#tp_timerange_end"
+                            placeholder="End" />
+                        <div class="input-group-append" data-target="#tp_timerange_end" data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+                        </div>
+                    </div>
+                    <div class="d-flex px-3">
+                        <div class="align-middle flex-fill text-center px-1">Himado: </div>
+                        <select id="timerange_himado" class="form-control flex-fill">
+                            <option value="0">free</option>
+                            <option value="1">easy</option>
+                            <option value="2">busy</option>
+                            <option value="3">offline</option>
+                        </select>
+                    </div>
+                    <div class="d-flex px-3 pb-3">
+                        <button type="button" class="btn btn-success flex-fill" onclick="btnAddTimerange()">Add</button>
+                        <button type="button" class="btn btn-danger flex-fill"
+                            onclick="btnRemoveTimerange()">Remove</button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse" data-target="#timer">
+                    Timer <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
+                </button>
+                <div id="timer" class="collapse">
+                    <div class="px-3 pt-3 d-flex flex-column">
+                        <input type="number" placeholder="minutes" class="flex-fill" id="timer_min">
+                    </div>
+                    <div class="d-flex px-3">
+                        <div class="align-middle flex-fill text-center px-1">Himado: </div>
+                        <select id="timer_himado" class="form-control flex-fill">
+                            <option value="0">free</option>
+                            <option value="1">easy</option>
+                            <option value="2">busy</option>
+                            <option value="3">offline</option>
+                        </select>
+                    </div>
+                    <div class="d-flex px-3 pb-3">
+                        <button type="button" class="btn btn-success flex-fill" onclick="btnAddTimer()">Add</button>
+                        <button type="button" class="btn btn-danger flex-fill"
+                            onclick="btnRemoveTimer()">Remove</button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse" data-target="#account">
+                    Account <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
+                </button>
+                <div id="account" class="collapse">
+                    <div class="input-group d-flex px-3 pt-3">
+                        <input type="text" class="form-control flex-fill" placeholder="New name" id="rename">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-info flex-fill" onclick="btnRename()">Rename</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group d-flex px-3">
+                        <input type="text" class="form-control flex-fill" placeholder="Sub-status" id="substatus">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-info flex-fill" onclick="btnSubstatus()">Set</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+
+            <!-- chat and log -->
+            <div class="align-self-center flex-fill d-flex flex-column justify-content-between h-100 flex-nowrap">
+                <div class="border-bottom d-flex p-2">
+                    <h3 class="text-center flex-fill border-right p-2">Chat</h3>
+                    <div class="p-2 w-25">
+                        <select class="custom-select" id="chat_type" onchange="chatChange()">
+                            <option selected id="chat_type_All" value="All">All</option>
+                            <option id="chat_type_Free" value="Free"><i class="fa fa-check-circle"></i> Free</option>
+                            <option id="chat_type_Easy" value="Easy"> Easy</option>
+                            <option id="chat_type_Busy" value="Busy"> Busy</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-fill d-flex flex-column justify-content-end w-100"
+                    style="overflow-y: auto; position: relative;" id="B#chat">
+                    <div id="block::chat_main" style="position: absolute;" class="h-100 w-100"></div>
+                </div>
+                <div>
+                    <textarea id="chatbox" class="form-control" rows="0" placeholder="Say something nice..."></textarea>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" onclick="btnSendChat()" class="btn-primary m-2">Chat</button>
+                        <button type="button" onclick="btnSendChatFree()" class="btn-success m-2">Chat: @Free</button>
+                        <button type="button" onclick="btnSendChatEasy()" class="btn-info m-2">Chat: @Easy</button>
+                        <button type="button" onclick="btnSendChatBusy()" class="btn-warning m-2">Chat: @Busy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- members -->
+            <div class="border-left align-self-end h-100">
+                <h3 class="border-bottom p-2 text-center">Members</h3>
+                <div class="d-flex p-2">
+                    <input type="text" id="member_search" onchange="searchUser() "
+                        placeholder="Press enter to search..." class="flex-fill">
+                </div>
+                <div id="list::members" class="text-left"></div>
+            </div>
+
+
+
         </div>
 
-        <div id="panel::members" class="panel" style="width: 15%;">
-            <center>
-                <h3>Members</h3>
-                <label>Search: </label>
-                <input type="text" id="member_search" onchange="searchUser()">
-                <div id="list::members" style="text-align: left;">
-                </div>
-                </left>
-            </center>
-        </div>
+    </div>
 </body>
 
 </html>

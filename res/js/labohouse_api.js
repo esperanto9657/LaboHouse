@@ -26,12 +26,19 @@ function openSocket() {
         var j = { "type": "cookie", "cookie": document.cookie };
         ws.send(JSON.stringify(j));
         dbg("WS: Opened.");
+        enableEventListeners();
         transMain();
+        enableJoinButton();
     };
     ws.onclose = function (e) {
         dbg("WS: Closed. Code: " + e.code + ", Reason: " + e.reason);
         ws = undefined;
+        disableEventListeners();
         transRegister();
+        if (e.code == 1006) {
+            window.alert("Server died.");
+        }
+        enableJoinButton();
     };
     ws.onerror = function (e) {
         err(e);
@@ -44,7 +51,8 @@ function wsEventHandler(m) {
 
     var type = m.type;
     if (type == null) {
-        console.error("'type' missing: " + type);
+        err("'type' missing: " + type);
+        err(m);
         return;
     }
 
@@ -56,14 +64,11 @@ function wsEventHandler(m) {
         reloadUsers(m.names);
         return;
     }
-    if(type == "name"){
-        displayName(m);
-        return;
-    }
 
     if (type == "new_chat") {
         // New chat message
-        appendChat(m);
+        appendChat(m.name, m);
+        chatChange();
         return;
     }
     if (type == "chat") {
@@ -82,10 +87,10 @@ function wsEventHandler(m) {
         return;
     }
 
-    console.error("Unhandled: " + type);
+    err("Unhandled: " + type);
 }
 
-function registerUser(id, name, success = function () { }, fail = function () { }) {
+function registerUser(id, name) {
     $.ajax({
         type: 'POST',
         url: "/register",
@@ -94,12 +99,11 @@ function registerUser(id, name, success = function () { }, fail = function () { 
             "name": name,
         },
         success: function () {
-            success();
             openSocket();
         },
         error: function (res) {
             ajax_error(res);
-            fail();
+            enableJoinButton();
         },
     });
 }
@@ -112,9 +116,10 @@ function ajax_error(res) {
     }
 }
 
-function sendChat(m) {
+function sendChat(c, m) {
     var j = {};
     j["type"] = "chat";
+    j["chat"] = c;
     j["msg"] = m;
 
     ws.send(JSON.stringify(j));
@@ -130,7 +135,7 @@ function sendHimado(h) {
     ws.send(JSON.stringify(j));
 }
 
-function sendSubhimado(s){
+function sendSubhimado(s) {
     var j = {};
     j["type"] = "subhimado";
     j["subhimado"] = s;
@@ -145,17 +150,25 @@ function addWatchlist(id) {
     ws.send(JSON.stringify(j));
 }
 
-function addTimeRange(start, end, himado) {
+function removeWatchlist(id){
     var j = {};
-    j["type"] = "add_timerange";
-    j["start"] = start;
-    j["end"] = end;
-    j["himado"] = himado;
+    j["type"] = "remove_watchlist";
+    j["id"] = id;
 
     ws.send(JSON.stringify(j));
 }
 
-function removeTimeRange(start, end) {
+function addTimerange(start, end, himado) {
+    var j = {};
+    j["type"] = "add_timerange";
+    j["start"] = start;
+    j["end"] = end;
+    j["himado"] = parseInt(himado);
+
+    ws.send(JSON.stringify(j));
+}
+
+function removeTimerange(start, end) {
     var j = {};
     j["type"] = "remove_timerange";
     j["start"] = start;
@@ -176,5 +189,19 @@ function addTimer(mins, himado) {
 function removeTimer() {
     var j = {};
     j["type"] = "remove_timer";
+    ws.send(JSON.stringify(j));
+}
+
+function rename(name) {
+    var j = {};
+    j["type"] = "rename";
+    j["name"] = name;
+    ws.send(JSON.stringify(j));
+}
+
+function substatus(s) {
+    var j = {};
+    j["type"] = "substatus";
+    j["substatus"] = s;
     ws.send(JSON.stringify(j));
 }

@@ -72,7 +72,11 @@ LaboHouse::request(Json j, Connection c)
                 return;
             }
 
-            main_chat.chat(usr, msg);
+            if (auto c{ chats.get(j["chat"]) }) {
+                c->chat(usr, msg);
+            } else {
+                logs << tag << "Unknown chat: " << j["chat"] << endl;
+            }
             return;
         }
 
@@ -136,6 +140,21 @@ LaboHouse::request(Json j, Connection c)
             return;
         }
 
+        if (type == "rename") {
+            usr.name = j["name"];
+            logs << tag << "User was renamed to " << j["name"] << endl;
+            broadcast_status(usr);
+            return;
+        }
+
+        if (type == "substatus") {
+            usr.substatus = j["substatus"];
+            logs << tag << "User's substatus was changed to: " << j["substatus"]
+                 << endl;
+            broadcast_status(usr);
+            return;
+        }
+
         errs << tag << " Unknown type: " << type << endl;
     } catch (Json::exception e) {
         logs << lh_tag << "Json error: " << e.what() << endl;
@@ -159,8 +178,13 @@ LaboHouse::LaboHouse()
        },
         [&](auto c) { log_out(c); } }
   , quote{ Quotes::get() }
-  , main_chat{ *this, 0, "main" }
-{}
+  , chats{ *this }
+{
+    chats.add("All");
+    chats.add("Free");
+    chats.add("Easy");
+    chats.add("Busy");
+}
 
 void
 LaboHouse::log_in(User& u, Connection c)
@@ -172,21 +196,6 @@ LaboHouse::log_in(User& u, Connection c)
         logs << "[LaboHouse] User logged in :" << u.id << endl;
     }
 
-    // Send all data on login.
-    // Name
-    {
-        Json j{ u.to_json() };
-        j["type"] = "name";
-        send(u, j);
-    }
-    // Chat
-    {
-        Json j;
-        j["type"] = "chat";
-        j["chat"] = main_chat.to_json();
-        send(u, j);
-    }
-
     // Users
     {
         Json j;
@@ -195,9 +204,17 @@ LaboHouse::log_in(User& u, Connection c)
         send(u, j);
     }
 
+    // Chat
+    for (auto& [name, c] : chats) {
+        auto j{ c.to_json() };
+        j["type"] = "chat";
+        send(u, j);
+    }
+
     // Quote
     {
         Json j;
+        auto quote{ Quotes::get() };
         j["type"] = "quote";
         j["author"] = quote.first;
         j["quote"] = quote.second;
@@ -205,18 +222,18 @@ LaboHouse::log_in(User& u, Connection c)
     }
 
     change_status(u, User::Status::sFree);
-    main_chat.chat(u, "has logged in.");
+    chats.get("All")->chat(u, "has logged in.");
 
     // Send notification
-    notify_watchers(u, u.name + " is online!.");
+    notify_watchers(u, u.name + " logged in!.");
 }
 
 void
 LaboHouse::notify_watchers(User& u, string msg)
 {
     for (auto& ou : users) {
-        if (ou.in_watchlist(u)) {
-            notify(ou, msg);
+        if (!ou.in_watchlist(u)) {
+            continue;
         }
         if (ou.status < User::Status::sBusy) {
             // Notify if not busy.
@@ -238,8 +255,8 @@ LaboHouse::log_out(Connection c)
     ronline.erase(itr->second);
     online.erase(itr);
     lg.unlock();
-    u.status = User::Status::sOffline;
-    main_chat.chat(u, "has logged out.");
+    change_status(u, User::Status::sOffline);
+    chats.get("All")->chat(u, "has logged out.");
     logs << "[LaboHouse] User logged out: " << u.id << endl;
 }
 
@@ -250,7 +267,7 @@ LaboHouse::start()
     // 1 minute loop.
     thread t2{ [&]() {
         while (true) {
-            this_thread::sleep_for(1min);
+            this_thread::sleep_for(3s);
             logs << "[LaboHouse] Checking for timeranges..." << endl;
             shared_lock sl{ mtx_online };
             auto now{ User::Time::now() };
@@ -299,27 +316,31 @@ void
 LaboHouse::change_status(User& u, User::Status s)
 {
     u.status = s;
-    auto j{ u.to_json() };
-    j["type"] = "himado";
-    logs << lh_tag << u.tag() << " Status changed: " << User::to_string(s)
-         << endl;
-    send_online(j);
-
     // Send notification to watcher.
     if (s == User::Status::sFree) {
         notify_watchers(u, u.name + " is '" + User::to_string(s) + "'.");
     }
+    broadcast_status(u);
+}
+
+void
+LaboHouse::broadcast_status(User& u)
+{
+    auto j{ u.to_json() };
+    j["type"] = "himado";
+    j["self"] = false;
+    send_online(j);
+    j["self"] = true;
+    send(u, j);
 }
 
 void
 LaboHouse::change_status(User& u, string subhimado)
 {
     u.substatus = subhimado;
-    auto j{ u.to_json() };
-    j["type"] = "himado";
     logs << lh_tag << u.tag() << " Status changed (sub): " << u.substatus
          << endl;
-    send_online(j);
+    broadcast_status(u);
 }
 
 void

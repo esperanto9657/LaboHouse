@@ -1,84 +1,28 @@
-* {
-    margin: 0;
-}
-
-.margin {
-    margin-right: 10px;
-}
-
-.tooltip {
-  position: relative;
-  display: inline-block;
-  border-bottom: 1px dotted black;
-}
-
-.tooltip .tooltiptext {
-  visibility: hidden;
-  width: 120px;
-  background-color: black;
-  color: #fff;
+.LH_header {
+  background-color: #46a495;
+  color: #ffffff;
+  text-shadow: black;
   text-align: center;
-  border-radius: 6px;
-  padding: 5px 0;
-  
-  /* Position the tooltip */
-  position: absolute;
-  z-index: 1;
-  top: 100%;
-  left: 50%;
-  margin-left: -60px;
 }
 
-.tooltip:hover .tooltiptext {
-  visibility: visible;
+.hidden {
+    max-width: 0;
+    max-height: 0;
+    visibility: hidden !important; 
 }
 
-.inline-div {
-    display: inline-block;
-    *display: inline;
-}
-
-.row:after {
-    content: "";
-    display: table;
-    clear: both;
-}
-
-html,
-body {
-    position: fixed;
-    top: 0px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-}
-
-.header {
-    box-sizing: border-box;
-    background-color: lightseagreen;
-    border-style: groove;
-    border-width: thick;
-    height: 8%;
-}
-
-.page {
-    box-sizing: border-box;
-    background-color: lightgreen;
-    border-style: solid;
-    border-width: medium;
-    height: 92%;
-}
-
-.panel {
-    box-sizing: border-box;
-    border-style: dotted;
-    border-width: thin;
-    float: left;
-    overflow-y: scroll;
+body, html {
     height: 100%;
+    overflow: hidden;
 }
 
-textarea {
-    width: 100%;
-    box-sizing: border-box;
+:root{
+    --primary: #10bb35;
+    --secondary: #6c757d;
+    --success: #28a745;
+    --info: #17a2b8;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --light: #f8f9fa;
+    --dark: #343a40;
 }
