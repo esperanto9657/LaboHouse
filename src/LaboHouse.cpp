@@ -8,6 +8,7 @@
 #include "labo/house/Quotes.h"
 #include "labo/server/WS.h"
 #include "nlohmann/json.hpp"
+#include "websocketpp/close.hpp"
 #include <chrono>
 #include <future>
 #include <labo/LaboHouse.h>
@@ -20,6 +21,7 @@ namespace labo {
 using namespace websocketpp::close;
 mutex mtx;
 const string lh_tag{ "[LaboHouse]" };
+
 void
 LaboHouse::request(Json j, Connection c)
 {
@@ -85,6 +87,7 @@ LaboHouse::request(Json j, Connection c)
             auto ouser{ users.by_id(id) };
             if (!ouser) {
                 logs << tag << "User not found: " << id << endl;
+                notify(usr, "User not found:" + static_cast<string>(id));
                 return;
             }
             if (&ouser.get() == &usr) {
@@ -97,12 +100,14 @@ LaboHouse::request(Json j, Connection c)
                 usr.watchlist_add(ouser.get());
                 logs << tag << " Added user to watchlist: " << ouser.get().id
                      << endl;
+                send_watchlist(usr);
                 return;
             } else if (type == "remove_watchlist") {
                 usr.watchlist_remove(ouser.get());
                 logs << tag
                      << " Removed user from watchlist: " << ouser.get().id
                      << endl;
+                send_watchlist(usr);
                 return;
             }
         }
@@ -117,6 +122,7 @@ LaboHouse::request(Json j, Connection c)
                 notify(usr, status);
                 logs << tag << " " << status;
             }
+            send_timeranges(usr);
             return;
         }
         if (type == "remove_timerange") {
@@ -125,18 +131,27 @@ LaboHouse::request(Json j, Connection c)
                 notify(usr, status);
                 logs << tag << " " << status;
             }
+            send_timeranges(usr);
             return;
         }
         if (type == "add_timer") {
-            usr.timer = { minutes{ static_cast<uint>(j["duration"]) },
-                          static_cast<User::Status>(
-                            static_cast<unsigned char>(j["himado"])) };
+            User::Timer t{ minutes{ static_cast<uint>(j["duration"]) },
+                           static_cast<User::Status>(
+                             static_cast<unsigned char>(j["himado"])) };
+            if (!t.valid) {
+                notify(usr, "Invalid timer: " + to_string(t));
+                logs << tag << " Invalid timer: " << t << "." << endl;
+                return;
+            }
+            usr.timer = t;
+            send_timer(usr);
             logs << tag << " Added timer: " << *usr.timer << "." << endl;
             return;
         }
         if (type == "remove_timer") {
             logs << tag << " Removed timer." << endl;
             usr.timer = {};
+            send_timer(usr);
             return;
         }
 
@@ -221,6 +236,11 @@ LaboHouse::log_in(User& u, Connection c)
         send(u, j);
     }
 
+    // Stuff
+    send_watchlist(u);
+    send_timer(u);
+    send_timer(u);
+
     change_status(u, User::Status::sFree);
     chats.get("All")->chat(u, "has logged in.");
 
@@ -288,7 +308,9 @@ LaboHouse::start()
                 logs << lh_tag << u->tag() << "Timer expired: " << *u->timer
                      << endl;
                 change_status(*u, u->timer->s);
+                notify(*u, "Timer expired: " + to_string(*u->timer));
                 u->timer = {};
+                send_timer(*u);
             }
             logs << "[LaboHouse] Done!" << endl;
         };
@@ -328,10 +350,11 @@ LaboHouse::broadcast_status(User& u)
 {
     auto j{ u.to_json() };
     j["type"] = "himado";
-    j["self"] = false;
-    send_online(j);
-    j["self"] = true;
-    send(u, j);
+    shared_lock sl{ mtx_online };
+    for (auto [c, cu] : online) {
+        j["self"] = &u == cu;
+        send(*cu, j);
+    }
 }
 
 void
@@ -359,5 +382,52 @@ LaboHouse::notify(User& u, string m)
     j["type"] = "notification";
     j["msg"] = m;
     send(u, j);
+}
+
+void
+LaboHouse::send_watchlist(User& u)
+{
+    Json j;
+    j["type"] = "watchlist";
+    j["watchlist"] = u.get_watchlist();
+    send(u, j);
+}
+
+void
+LaboHouse::send_timeranges(User& u)
+{
+    Json j;
+    j["type"] = "timeranges";
+    j["timeranges"] = u.get_timeranges();
+    send(u, j);
+}
+
+void
+LaboHouse::send_timer(User& u)
+{
+    Json j;
+    j["type"] = "timer";
+    if (u.timer) {
+        j["timer"] = u.timer->to_json();
+    } else {
+        j["timer"] = {};
+    }
+    send(u, j);
+}
+
+void
+LaboHouse::terminate()
+{
+    using namespace websocketpp::close::status;
+    {
+        ws.stop_listening();
+        unique_lock ul{ mtx_online };
+        for (auto [c, u] : online) {
+            ws.pause_reading(c);
+            ws.close(c, going_away, "Server Terminated.");
+            logs << "[LaboHouse] Connection terminated: " << u->id << endl;
+        }
+        ws.stop();
+    }
 }
 };

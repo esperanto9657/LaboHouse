@@ -31,17 +31,20 @@
 </head>
 
 <body>
-    <div class="d-flex w-100 h-100 flex-column bg-light">
+    <audio id="test_sound">
+        <source src="https://notificationsounds.com/sound-effects/rvrb-21/download/mp3" type="audio/mp3"></audio>
+    <div class="d-flex w-100 h-100 flex-column lh-bg-light">
         <!-- Page Header -->
-        <div id="LH::header" class="shadow bg-primary d-flex">
-            <div class="text-center display-1 font-weight-bolder text-light flex-fill">
+        <div id="LH::header" class="shadow lh-bg-primary d-flex">
+            <div class="fixed-fill invisible">dummy</div>
+            <div class="text-center display-1 font-weight-bolder text-light fixed-fill">
                 LaboHouse
             </div>
-            <div class="text-right text-white text-right p-3 text-bottom" id="GERO"></div>
+            <div class="text-right text-white text-right p-3 text-bottom fixed-fill" id="GERO"></div>
         </div>
 
         <!-- Toasts -->
-        <div class="position-absolute w-100 d-flex flex-column p-4" id="toast"></div>
+        <div class="position-absolute d-flex flex-column p-4" style="top: 0; right: 0;" id="toast"></div>
 
         <!-- Loing Page -->
         <div id="P#register" class="d-flex flex-grow-1 text-center">
@@ -57,7 +60,7 @@
                     </div>
                     <div class="py-2">
                         <button type="button" id="btn_join" onclick="btnRegisterUser()"
-                            class="btn btn-primary rounded-pill">Join
+                            class="btn btn-success rounded-pill">Join
                             now!</button>
                     </div>
                 </div>
@@ -68,13 +71,13 @@
         <!-- index page -->
         <div id="P#main" class="flex-grow-1 d-flex justify-content-between">
             <!-- ひま度変更 -->
-            <div class="border-right align-self-start h-100">
-                <h3 class="border-bottom display-4 p-4" id="block::name"></h3>
+            <div class="border-right align-self-start h-100" style="flex-basis: 25%;">
+                <h3 class="border-bottom display-4 p-4" style="flex-wrap: wrap;" id="block::name"></h3>
 
                 <!-- Change 'HIMADO' -->
                 <div class="border-bottom d-flex p-3">
-                    <div class="align-middle flex-fill text-center px-1">Himado: </div>
-                    <select id="himado" onchange="btnSetHimado()" class="form-control flex-fill">
+                    <div class="align-middle flex-fill text-center px-1 text-vcenter font-weight-bold">Himado: </div>
+                    <select id="himado" onchange="btnSetHimado()" class="form-control flex-fill custom-select">
                         <option value="0">free</option>
                         <option value="1">easy</option>
                         <option value="2">busy</option>
@@ -83,24 +86,22 @@
                 </div>
 
                 <!-- watch list -->
-                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse"
-                    data-target="#watchlist">
+                <button type="button" class="btn lh-bg-util w-100 my-1" data-toggle="collapse" data-target="#watchlist">
                     Watchlist <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
                 </button>
                 <div id="watchlist" class="collapse">
                     <div class="input-group p-3">
-                        <select class="form-control" id="watchID">
+                        <select class="form-control custom-select" id="watchID">
                         </select>
                         <div class="input-group-append">
                             <button type="button" class="btn btn-success" onclick="btnAddWatchList()">Add</button>
-                            <button type="button" class="btn btn-danger" onclick="btnRemoveWatchList()">Remove</button>
                         </div>
                     </div>
+                    <div id="watchlist_users"></div>
                 </div>
 
 
-                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse"
-                    data-target="#timerange">
+                <button type="button" class="btn lh-bg-util w-100 my-1" data-toggle="collapse" data-target="#timerange">
                     Timerange <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
                 </button>
                 <div id="timerange" class="collapse">
@@ -119,8 +120,9 @@
                         </div>
                     </div>
                     <div class="d-flex px-3">
-                        <div class="align-middle flex-fill text-center px-1">Himado: </div>
-                        <select id="timerange_himado" class="form-control flex-fill">
+                        <div class="align-middle flex-fill text-center px-1 text-vcenter font-weight-bold">Himado:
+                        </div>
+                        <select id="timerange_himado" class="form-control flex-fill custom-select">
                             <option value="0">free</option>
                             <option value="1">easy</option>
                             <option value="2">busy</option>
@@ -129,35 +131,42 @@
                     </div>
                     <div class="d-flex px-3 pb-3">
                         <button type="button" class="btn btn-success flex-fill" onclick="btnAddTimerange()">Add</button>
-                        <button type="button" class="btn btn-danger flex-fill"
-                            onclick="btnRemoveTimerange()">Remove</button>
                     </div>
+                    <div id="timeranges"></div>
                 </div>
 
-                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse" data-target="#timer">
+                <button type="button" class="btn lh-bg-util w-100 my-1" data-toggle="collapse" data-target="#timer">
                     Timer <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
                 </button>
                 <div id="timer" class="collapse">
-                    <div class="px-3 pt-3 d-flex flex-column">
-                        <input type="number" placeholder="minutes" class="flex-fill" id="timer_min">
+                    <div id="form_add_timer">
+                        <div class="px-3 pt-3 d-flex flex-column">
+                            <input type="number" placeholder="minutes" class="flex-fill" id="timer_min">
+                        </div>
+                        <div class="d-flex px-3">
+                            <div class="align-middle flex-fill text-center px-1 text-vcenter font-weight-bold">Himado:
+                            </div>
+                            <select id="timer_himado" class="form-control flex-fill custom-select">
+                                <option value="0">free</option>
+                                <option value="1">easy</option>
+                                <option value="2">busy</option>
+                                <option value="3">offline</option>
+                            </select>
+                        </div>
+                        <div class="d-flex px-3 pb-3">
+                            <button type="button" class="btn btn-success flex-fill" onclick="btnAddTimer()">Add</button>
+                        </div>
                     </div>
-                    <div class="d-flex px-3">
-                        <div class="align-middle flex-fill text-center px-1">Himado: </div>
-                        <select id="timer_himado" class="form-control flex-fill">
-                            <option value="0">free</option>
-                            <option value="1">easy</option>
-                            <option value="2">busy</option>
-                            <option value="3">offline</option>
-                        </select>
-                    </div>
-                    <div class="d-flex px-3 pb-3">
-                        <button type="button" class="btn btn-success flex-fill" onclick="btnAddTimer()">Add</button>
-                        <button type="button" class="btn btn-danger flex-fill"
-                            onclick="btnRemoveTimer()">Remove</button>
+                    <div id="form_remove_timer" class="hidden">
+                        <div class="d-flex p-3">
+                            <div id="timer_text" class="text-center flex-fill"></div>
+                            <button type="button" class="btn btn-danger flex-fill"
+                                onclick="btnRemoveTimer()">Remove</button>
+                        </div>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-primary w-100 my-1" data-toggle="collapse" data-target="#account">
+                <button type="button" class="btn lh-bg-util w-100 my-1" data-toggle="collapse" data-target="#account">
                     Account <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
                 </button>
                 <div id="account" class="collapse">
@@ -168,10 +177,39 @@
                         </div>
                     </div>
 
-                    <div class="input-group d-flex px-3">
+                    <div class="input-group d-flex px-3 pb-3">
                         <input type="text" class="form-control flex-fill" placeholder="Sub-status" id="substatus">
                         <div class="input-group-append">
                             <button type="button" class="btn btn-info flex-fill" onclick="btnSubstatus()">Set</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn lh-bg-util w-100 my-1" data-toggle="collapse" data-target="#settings">
+                    Settings <i class="fa fa-caret-square-o-down" aria-hidden="true"></i>
+                </button>
+                <div id="settings" class="collapse">
+                    <div class="py-3">
+                        <div class="d-flex px-3 pb-1">
+                            <div class="flex-fill text-left font-weight-bold">Theme: </div>
+                            <div class="custom-control-inline custom-radio flex-fill">
+                                <input type="radio" class="custom-control-input" id="main_theme" name="theme"
+                                    value="main" onclick="btnTheme(this)">
+                                <label class="custom-control-label" for="main_theme">LaboHouse</label>
+                            </div>
+                            <div class="custom-control-inline custom-radio flex-fill">
+                                <input type="radio" class="custom-control-input" id="cb_theme" name="theme"
+                                    value="color_blind" onclick="btnTheme(this)">
+                                <label class="custom-control-label" for="cb_theme">Color Blind</label>
+                            </div>
+                        </div>
+                        <div class="d-flex px-3 pb-1">
+                            <div class="flex-fill text-left font-weight-bold">Notifications (Desktop): </div>
+                            <div class="custom-control custom-switch flex-fill">
+                                <input type="checkbox" class="custom-control-input" id="sw_notifications"
+                                    onclick="btnToggleNotification(this);">
+                                <label for="sw_notifications" class="custom-control-label"></label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -179,10 +217,12 @@
 
 
             <!-- chat and log -->
-            <div class="align-self-center flex-fill d-flex flex-column justify-content-between h-100 flex-nowrap">
+            <div class="align-self-center flex-fill d-flex flex-column justify-content-between h-100"
+                style="flex-basis: 50%;">
                 <div class="border-bottom d-flex p-2">
-                    <h3 class="text-center flex-fill border-right p-2">Chat</h3>
-                    <div class="p-2 w-25">
+                    <div class="invisible fixed-fill">Suck my dick. M.K.</div>
+                    <h3 class="text-center fixed-fill border-right p-2">Chat</h3>
+                    <div class="p-2 fixed-fill">
                         <select class="custom-select" id="chat_type" onchange="chatChange()">
                             <option selected id="chat_type_All" value="All">All</option>
                             <option id="chat_type_Free" value="Free"><i class="fa fa-check-circle"></i> Free</option>
@@ -191,23 +231,24 @@
                         </select>
                     </div>
                 </div>
-                <div class="flex-fill d-flex flex-column justify-content-end w-100"
+                <div class="flex-fill d-flex flex-column justify-content-end w-100 lh-wrap"
                     style="overflow-y: auto; position: relative;" id="B#chat">
-                    <div id="block::chat_main" style="position: absolute;" class="h-100 w-100"></div>
+                    <div id="block::chat_main" style="position: absolute; z-index: 2;" class="h-100 w-100"></div>
+                    <div class="lh-bg w-100 h-100 d-flex justify-content-between" id="people"></div>
                 </div>
                 <div>
                     <textarea id="chatbox" class="form-control" rows="0" placeholder="Say something nice..."></textarea>
                     <div class="d-flex justify-content-end">
-                        <button type="button" onclick="btnSendChat()" class="btn-primary m-2">Chat</button>
-                        <button type="button" onclick="btnSendChatFree()" class="btn-success m-2">Chat: @Free</button>
-                        <button type="button" onclick="btnSendChatEasy()" class="btn-info m-2">Chat: @Easy</button>
-                        <button type="button" onclick="btnSendChatBusy()" class="btn-warning m-2">Chat: @Busy</button>
+                        <button type="button" onclick="btnSendChat()" class="lh-bg-util m-2">Chat</button>
+                        <button type="button" onclick="btnSendChatFree()" class="lh-bg-free m-2">Chat: @Free</button>
+                        <button type="button" onclick="btnSendChatEasy()" class="lh-bg-easy m-2">Chat: @Easy</button>
+                        <button type="button" onclick="btnSendChatBusy()" class="lh-bg-busy m-2">Chat: @Busy</button>
                     </div>
                 </div>
             </div>
 
             <!-- members -->
-            <div class="border-left align-self-end h-100">
+            <div class="border-left align-self-end h-100" style="flex-basis: 25%;">
                 <h3 class="border-bottom p-2 text-center">Members</h3>
                 <div class="d-flex p-2">
                     <input type="text" id="member_search" onchange="searchUser() "

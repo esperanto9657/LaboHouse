@@ -30,13 +30,30 @@ function tooltip(value, tip) {
     return x;
 }
 
+var g_notifications_enabled = false;
+
 // Run on page load.
 window.onload = function () {
     // Hide main page.
     hide("P#main");
 
+    changeTheme("main");
+    E("main_theme").checked = true;
+
     // Initializations before the body loads.
     openSocket(); // Login attempt with current Cookie.
+
+    // Initialize notifications
+    Notification.requestPermission().then(
+        function (p) {
+            if (p === "granted") {
+                this.g_notifications_enabled = true;
+            } else {
+                this.g_notifications_enabled = false;
+                err("Notification permission denied");
+            }
+        }
+    );
 
     // Initializations that run after loading the body.
     window.document.body.onload = init();
@@ -99,6 +116,12 @@ function btnRemoveTimerange() {
 }
 
 function btnAddTimer() {
+    var t = E("timer_min").value;
+    if (t == "" || t == null || t == undefined) {
+        showNotification("Field 'minute' is required.");
+        return;
+    }
+
     addTimer(parseInt(E("timer_min").value), parseInt(E("timer_himado").value));
 }
 
@@ -133,7 +156,7 @@ function createToast(body, header) {
     var h = C("div");
     h.classList = "border-bottom p-2 bg-warning"
     var ht = C("strong");
-    ht.classList = "mr-auto m-1 text-white font-weight-bolder";
+    ht.classList = "mr-auto m-1 text-black font-weight-bolder";
     ht.innerText = header;
     var btn = C("button");
     btn.setAttribute("type", "button");
@@ -153,11 +176,11 @@ function createToast(body, header) {
     return p;
 };
 
-function clearToast(){
+function clearToast() {
     g_toast_count--;
-    if(g_toast_count == 0){
+    if (g_toast_count == 0) {
         var ts = document.getElementsByClassName("toast");
-        for(var i = 0; i < ts.length; i++){
+        for (var i = 0; i < ts.length; i++) {
             $(ts[i]).remove();
         }
         resetNotification();
@@ -289,10 +312,23 @@ function displayUsers(m) {
     };
 
     // Force the HIMADO order.
-    members.appendChild(create_list("Free", free_icon(), "bg-success"));
-    members.appendChild(create_list("Easy", easy_icon(), "bg-info"));
-    members.appendChild(create_list("Busy", busy_icon(), "bg-warning"));
-    members.appendChild(create_list("Offline", offline_icon(), "bg-secondary"));
+    members.appendChild(create_list("Free", free_icon(), "lh-bg-free"));
+    members.appendChild(create_list("Easy", easy_icon(), "lh-bg-easy"));
+    members.appendChild(create_list("Busy", busy_icon(), "lh-bg-busy"));
+    members.appendChild(create_list("Offline", offline_icon(), "lh-bg-offline"));
+
+    // Display people.
+    var c = 0;
+    if (m.Free !== undefined) {
+        c += m.Free.length;
+    }
+    if (m.Easy !== undefined) {
+        c += m.Easy.length;
+    }
+    if (m.Busy !== undefined) {
+        c += m.Busy.length;
+    }
+    displayPeople(c);
 
     // Setup dropdown menu.
     var dropdown = E("watchID");
@@ -367,18 +403,21 @@ function getHimado(id) {
 // Called when appending a line to the chat.
 function appendChat(c, m) {
     g_chat[c].push(m);
+    if (g_chat[c].length > 64) {
+        g_chat[c].splice(0, 1);
+    }
 };
 
 function printChatLine(m) {
     var chat = E("block::chat_main");
 
     var line = C("div");
-    var time = C("i");
+    var time = C("span");
     time.innerText = m.time;
     var user = tooltip(" " + m.user.name, m.user.name + "#" + m.user.id + ": " + m.user.substatus)
     var h = to_int(getHimado(m.user.id));
     user.prepend(icons[h]());
-    var msg = C("i");
+    var msg = C("span");
     msg.innerText = ": " + m.msg;
 
     line.appendChild(time);
@@ -419,6 +458,11 @@ function showNotification(m) {
     var n = new Date;
     E("toast").appendChild(createToast(m, "Notification [" + n.getHours() + ":" + n.getMinutes() +
         "]"));
+
+    if (g_notifications_enabled) {
+        new Notification(m);
+        E("test_sound").play();
+    }
 };
 
 function resetNotification() {
@@ -426,7 +470,14 @@ function resetNotification() {
 };
 
 function showQuote(author, quote) {
-    E("GERO").innerText = "\"" + quote + "\" - " + author;
+    function spaces(i) {
+        var res = "";
+        for (var x = 0; x < i; x++) {
+            res += ' ';
+        }
+        return res;
+    };
+    E("GERO").innerText = "\"" + quote + "\"\n" + spaces(quote.length - author.length - 5) + " - " + author;
 };
 
 // Refreshes the entire main page.
@@ -503,6 +554,121 @@ function btnSubstatus() {
 function chatChange() {
     var ct = E("chat_type").value;
     refreshChat(ct);
+}
+
+function showTimeranges(trs) {
+    var d = E("timeranges");
+    d.innerText = "";
+    trs.forEach(function (tr) {
+        var start = tr.start;
+        var end = tr.end;
+        var himado = tr.himado;
+
+        var e = C("div");
+        e.classList = "d-flex p-1 border-bottom";
+        var t = C("div");
+        t.classList = "flex-fill text-center text-middle";
+        t.innerText = start + " ~ " + end + ": " + himado;
+
+        var b = C("button");
+        b.classList = "btn btn-danger flex-fill";
+        b.type = "button";
+        b.innerText = "Remove";
+        b.onclick = function () { removeTimerange(start, end); };
+        e.appendChild(t);
+        e.appendChild(b);
+        d.appendChild(e);
+    });
+}
+
+function showWatchlist(wl) {
+    var d = E("watchlist_users");
+    d.innerText = "";
+    wl.forEach(function (u) {
+        var display = u.name + "#" + u.id;
+        var e = C("div");
+        e.classList = "d-flex p-1 border-bottom";
+        var t = C("div");
+        t.classList = "flex-fill text-center text-middle";
+        t.innerText = display;
+
+        var b = C("button");
+        b.classList = "btn btn-danger flex-fill";
+        b.type = "button";
+        b.innerText = "Remove";
+        b.onclick = function () { removeWatchlist(u.id); };
+        e.appendChild(t);
+        e.appendChild(b);
+        d.appendChild(e);
+    });
+}
+
+function updateTimer(t) {
+    if (t == null) {
+        // Show the form.
+        E("form_add_timer").classList.remove("hidden");
+        E("form_remove_timer").classList.add("hidden");
+    } else {
+        // Hide the form.
+        E("timer_text").innerText = t.time + ": " + t.himado;
+
+        E("form_add_timer").classList.add("hidden");
+        E("form_remove_timer").classList.remove("hidden");
+    }
+}
+
+var g_themes = {
+    "main": [
+        "rgb(11, 100, 11)",
+        "rgb(230, 255, 230)",
+        "rgb(118, 255, 148)",
+        "rgb(140, 255, 255)",
+        "rgb(237, 255, 136)",
+        "rgb(168, 166, 166)",
+        "rgb(51, 115, 225)",
+    ],
+    "color_blind": [
+        "rgb(0, 0, 0)",
+        "rgb(255, 255, 255)",
+        "rgb(255, 241, 0)",
+        "rgb(135, 201, 165)",
+        "rgb(185, 227, 249)",
+        "rgb(125, 129, 141)",
+        "rgb(0, 84, 217)",
+    ]
+};
+
+function changeTheme(i) {
+    var t = g_themes[i];
+    var r = document.documentElement;
+    r.style.setProperty("--primary", t[0]);
+    r.style.setProperty("--light", t[1]);
+    r.style.setProperty("--free-bg", t[2]);
+    r.style.setProperty("--easy-bg", t[3]);
+    r.style.setProperty("--busy-bg", t[4]);
+    r.style.setProperty("--offline-bg", t[5]);
+    r.style.setProperty("--utils-bg", t[6]);
+}
+
+function btnTheme(e) {
+    changeTheme(e.value);
+}
+
+function btnToggleNotification(e) {
+    g_notifications_enabled = e.checked;
+};
+
+function displayPeople(i) {
+    var p = E("people");
+    p.innerText = "";
+    for (var c = 0; c < i; c++) {
+        var h = C("img");
+        h.classList.add("people");
+        h.setAttribute("src", "human.png");
+        h.setAttribute("width", "100");
+        h.setAttribute("height", "100");
+        p.appendChild(h);
+    }
 }
 
 // Timepickers

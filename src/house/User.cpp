@@ -164,18 +164,37 @@ User::Time::now()
 User::Timer::Timer(minutes m, Status s)
   : Time{ [&] {
       auto now{ Time::now() };
-      if (now.m.count() + m.count() > 60) {
-          now.h++;
-      }
-      now.m += m;
+      now.h += hours{ m.count() / 60 };
+      now.m += m % 60;
       return now;
   }() }
   , s{ s }
+  , valid{ h.count() < 24 }
 {}
 
 bool
 User::Timer::expired(Time t)
 {
     return *this < t;
+}
+
+Json
+User::get_watchlist() const
+{
+    Json j{ Json::array() };
+    for (auto u : watchlist) {
+        j.push_back(u->to_json());
+    }
+    return j;
+}
+
+Json
+User::get_timeranges() const
+{
+    Json j{ Json::array() };
+    for (auto tr : timeranges) {
+        j.push_back(tr.to_json());
+    }
+    return j;
 }
 }

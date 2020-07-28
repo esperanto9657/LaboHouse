@@ -87,6 +87,22 @@ function wsEventHandler(m) {
         return;
     }
 
+    if (type == "timeranges") {
+        showTimeranges(m.timeranges);
+        return;
+    }
+
+    if (type == "watchlist") {
+        showWatchlist(m.watchlist);
+        return;
+    }
+
+    if (type == "timer") {
+        updateTimer(m.timer);
+        return;
+    }
+
+    err(m);
     err("Unhandled: " + type);
 }
 
@@ -150,7 +166,7 @@ function addWatchlist(id) {
     ws.send(JSON.stringify(j));
 }
 
-function removeWatchlist(id){
+function removeWatchlist(id) {
     var j = {};
     j["type"] = "remove_watchlist";
     j["id"] = id;

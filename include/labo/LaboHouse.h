@@ -90,6 +90,9 @@ class LaboHouse
     /// @param msg
     void notify_watchers(User& u, string msg);
 
+    /// Attempt to immediately terminate connections.
+    void terminate();
+
   private:
     /// Send names to user.
     /// @param u
@@ -101,6 +104,10 @@ class LaboHouse
     void change_status(User& u, User::Status s);
     void change_status(User& u, string subhimado);
     void broadcast_status(User& u);
+
+    void send_watchlist(User &u);
+    void send_timeranges(User &u);
+    void send_timer(User &u);
 };
 
 template<

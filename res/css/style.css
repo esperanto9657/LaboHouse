@@ -1,10 +1,3 @@
-.LH_header {
-  background-color: #46a495;
-  color: #ffffff;
-  text-shadow: black;
-  text-align: center;
-}
-
 .hidden {
     max-width: 0;
     max-height: 0;
@@ -14,15 +7,73 @@
 body, html {
     height: 100%;
     overflow: hidden;
+    font-family: Verdana, Geneva, sans-serif;
+    font-style: normal;
 }
 
-:root{
-    --primary: #10bb35;
-    --secondary: #6c757d;
-    --success: #28a745;
-    --info: #17a2b8;
-    --warning: #ffc107;
-    --danger: #dc3545;
-    --light: #f8f9fa;
-    --dark: #343a40;
+.fixed-fill {
+    flex: 1;
+}
+
+:root {
+    --primary: rgb(11, 100, 11);
+    --light: rgb(230, 255, 230);
+    --free-bg: rgb(118, 255, 148);
+    --easy-bg: rgb(140, 255, 255);
+    --busy-bg: rgb(237, 255, 136);
+    --offline-bg: rgb(168, 166, 166);
+    --utils-bg: rgb(222, 225, 228);
+}
+
+.lh-bg-primary{
+    background-color: var(--primary);
+}
+
+.lh-bg-light{
+    background-color: var(--light); 
+}
+
+.lh-bg-free{
+    background-color: var(--free-bg);
+}
+
+.lh-bg-easy{
+    background-color: var(--easy-bg);
+}
+
+.lh-bg-busy{
+    background-color: var(--busy-bg);
+}
+
+.lh-bg-offline{
+    background-color: var(--offline-bg);
+}
+
+.lh-bg-util{
+    background-color: var(--utils-bg);
+    color: white;
+    border-color: black;
+}
+
+.text-vcenter{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.people {
+    filter: blur(3px);
+    opacity: 5%;
+}
+
+
+.lh-wrap{
+    position: relative;
+}
+
+.lh-bg{
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
